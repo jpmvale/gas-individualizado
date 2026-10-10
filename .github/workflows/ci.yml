@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run build
+
+  test:
+    name: testes
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Postgres 18: as PKs usam `uuidv7()` nativo.
+        image: postgres:18
+        env:
+          POSTGRES_USER: gas
+          POSTGRES_PASSWORD: gas
+          POSTGRES_DB: gas_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gas"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+
+    env:
+      DATABASE_URL: postgres://gas:gas@localhost:5432/gas_test
+      TEST_DATABASE_URL: postgres://gas:gas@localhost:5432/gas_test
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # A integração roda contra Postgres real, com o schema das migrations.
+      - name: aplicar migrations
+        run: pnpm --filter @gas/db db:migrate
+      - run: pnpm turbo run test

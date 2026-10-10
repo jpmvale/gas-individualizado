@@ -1,0 +1,94 @@
+# Ambiente de dev do gas-individualizado: banco, fila, migrate, API e worker.
+# Mesmo compose serve de base para produção (overlay em docker-compose.prod.yml).
+# O front em dev roda nativo (`pnpm --filter @gas/front dev`) contra a API daqui.
+
+services:
+  postgres:
+    restart: unless-stopped
+    image: postgres:18 # as PKs usam uuidv7() nativo
+    environment:
+      POSTGRES_USER: gas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gas}
+      POSTGRES_DB: gas
+    ports:
+      - "5432:5432"
+    volumes:
+      # PG18 usa mount único em /var/lib/postgresql (dados num subdir por versão)
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    restart: unless-stopped
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # migrate, api e worker compartilham UMA imagem. `image` + `build`: local constrói,
+  # na VPS `docker compose pull` baixa do GHCR. IMAGE_TAG é o sha injetado pela esteira.
+  migrate:
+    image: ghcr.io/jpmvale/gas-individualizado-api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "packages/db/dist/migrate.js"]
+    environment:
+      DATABASE_URL: postgres://gas:${POSTGRES_PASSWORD:-gas}@postgres:5432/gas
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    restart: unless-stopped
+    image: ghcr.io/jpmvale/gas-individualizado-api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "apps/api/dist/main.js"]
+    environment:
+      DATABASE_URL: postgres://gas:${POSTGRES_PASSWORD:-gas}@postgres:5432/gas
+      PORT: "3000"
+      SESSION_TTL: ${SESSION_TTL:-30d}
+      APP_URL: ${APP_URL:-http://localhost:3001}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      EMAIL_FROM: ${EMAIL_FROM:-Gás Individualizado <no-reply@exemplo.com>}
+      RESEND_API_KEY: ${RESEND_API_KEY:-} # vazio → o link do convite vai para o log
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    restart: unless-stopped
+    image: ghcr.io/jpmvale/gas-individualizado-api:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["node", "apps/worker/dist/worker.js"]
+    environment:
+      DATABASE_URL: postgres://gas:${POSTGRES_PASSWORD:-gas}@postgres:5432/gas
+      REDIS_URL: redis://redis:6379
+      # Sincronização de leituras: a cada hora, por condomínio, pela fonte configurada.
+      SYNC_INTERVAL_MS: ${SYNC_INTERVAL_MS:-3600000}
+      # Âncora da fonte simulada (só vale enquanto não há adaptador da Aépio).
+      SIMULADA_ANCORA: ${SIMULADA_ANCORA:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:

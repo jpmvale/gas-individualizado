@@ -1,0 +1,116 @@
+name: deploy
+
+# Mesmo desenho do coda: só em `main`, só depois do CI verde, imagens no GHCR e um forced
+# command SSH na VPS. Fica DESLIGADO até a VPS estar preparada: ligue com a variável de
+# repositório DEPLOY_ENABLED=true e os secrets GHCR_TOKEN, VPS_DEPLOY_KEY e VPS_HOST.
+on:
+  workflow_run:
+    workflows: ["CI"] # nome EXATO do ci.yml; o casamento é literal
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-producao
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    if: >-
+      vars.DEPLOY_ENABLED == 'true' && (
+        github.event_name == 'workflow_dispatch' ||
+        github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Em workflow_run o checkout default não é o commit testado.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: sha curto
+        id: sha
+        run: echo "tag=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      # PAT em vez do GITHUB_TOKEN: no coda (repo privado) o GITHUB_TOKEN falhou com `denied`.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: build e push do backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/jpmvale/gas-individualizado-api:${{ steps.sha.outputs.tag }}
+            ghcr.io/jpmvale/gas-individualizado-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: build e push do front
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/front/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_DEMO=${{ vars.NEXT_PUBLIC_DEMO || 'false' }}
+          tags: |
+            ghcr.io/jpmvale/gas-individualizado-front:${{ steps.sha.outputs.tag }}
+            ghcr.io/jpmvale/gas-individualizado-front:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: publicar na VPS
+        env:
+          CHAVE: ${{ secrets.VPS_DEPLOY_KEY }}
+          MAQUINA: ${{ secrets.VPS_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          # `%s\n`: chave OpenSSH sem newline final é recusada ("error in libcrypto").
+          printf '%s\n' "$CHAVE" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          ssh-keygen -y -f ~/.ssh/deploy > /dev/null \
+            || { echo "::error::a chave privada em VPS_DEPLOY_KEY está malformada"; exit 1; }
+
+          # Só o que NÃO CHEGOU (255) é repetido; erro do script remoto sai na primeira.
+          conectar() {
+            rm -f ~/.ssh/known_hosts
+            ssh-keyscan -H "$MAQUINA" >> ~/.ssh/known_hosts 2>/dev/null || return 255
+            [ -s ~/.ssh/known_hosts ] || return 255
+            set +e
+            ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=15 \
+              deploy@"$MAQUINA" "gas-individualizado ${{ steps.sha.outputs.tag }}"
+            local c=$?
+            set -e
+            return $c
+          }
+
+          for tentativa in 1 2 3; do
+            set +e
+            conectar
+            CODIGO=$?
+            set -e
+            if [ "$CODIGO" -ne 255 ]; then break; fi
+            if [ "$tentativa" -lt 3 ]; then
+              echo "::warning::tentativa ${tentativa} não alcançou a VPS; repetindo em $((tentativa * 15))s"
+              sleep $((tentativa * 15))
+            fi
+          done
+
+          if [ "$CODIGO" -eq 0 ]; then exit 0; fi
+          if [ "$CODIGO" -eq 255 ]; then
+            echo "::error::as 3 tentativas não alcançaram a VPS (código 255)."
+          else
+            echo "::error::a VPS falhou no deploy de '${{ steps.sha.outputs.tag }}' (código $CODIGO)."
+          fi
+          exit "$CODIGO"

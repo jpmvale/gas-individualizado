@@ -1,0 +1,25 @@
+{
+  "name": "gas-individualizado",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.10.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:generate": "pnpm --filter @gas/db db:generate",
+    "db:migrate": "pnpm --filter @gas/db db:migrate",
+    "demo:seed": "pnpm --filter @gas/worker demo:seed",
+    "test:reset": "docker compose exec -T postgres psql -U gas -d postgres -c 'DROP DATABASE IF EXISTS gas_test' -c 'CREATE DATABASE gas_test' && DATABASE_URL=postgres://gas:gas@localhost:5432/gas_test pnpm --filter @gas/db db:migrate",
+    "test:integration": "pnpm test:reset && TEST_DATABASE_URL=postgres://gas:gas@localhost:5432/gas_test DATABASE_URL=postgres://gas:gas@localhost:5432/gas_test pnpm --filter @gas/core test"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.10"
+  }
+}
