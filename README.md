@@ -4,7 +4,8 @@ Medição individualizada de gás (GLP) para condomínios: cada morador vê o pr
 síndico acompanha o prédio inteiro. As leituras vêm dos medidores da Aépio; enquanto a API deles
 não está documentada, uma **fonte simulada** alimenta o sistema (DEC-007).
 
-Especificação completa em [`docs/especificacao.md`](docs/especificacao.md). Estado da
+Especificação completa em [`docs/especificacao.md`](docs/especificacao.md); deploy em
+[`docs-tec/deploy.md`](docs-tec/deploy.md). Estado da
 implementação e próximos passos em [`docs-tec/HANDOFF.md`](docs-tec/HANDOFF.md).
 
 ## Stack

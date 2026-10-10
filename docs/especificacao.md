@@ -494,7 +494,7 @@ export interface AepioPort {
 | **QA-06** | Como ratear o consumo de áreas comuns? | Fechamento. | Só exibido no MVP. |
 | **QA-07** | Por quanto tempo guardar leituras brutas? | LGPD e custo de banco. | 5 anos. |
 | **QA-08** | Alertas por WhatsApp ou push além de e-mail? | Custo e integração. | Só tela + e-mail no MVP. |
-| **QA-09** | Na VPS, como os projetos compartilham as portas 80/443? Cada projeto sobe seu próprio Caddy, como o compose do coda descreve, ou há um proxy comum? | Dois Caddy na mesma máquina não podem ocupar 80/443. | Seguir o arranjo que já roda lá hoje para coda, kindred e expense-analyzer; adicionar `gas.imp-software.cloud` nele. |
+| **QA-09** | ~~Na VPS, como os projetos compartilham as portas 80/443?~~ **Respondida pelo repo vps-infra:** um Caddy compartilhado com Caddyfile estático e a rede docker `edge`; nenhum app sobe proxy próprio. | Dois Caddy na mesma máquina não podem ocupar 80/443. | `gas.imp-software.cloud` entra como mais um bloco no Caddyfile compartilhado (ADR-G06). |
 | **QA-10** | Quantos condomínios/unidades no início, e já existe o primeiro prédio piloto? | Dimensionamento e dados de teste. | 1 condomínio piloto. |
 
 ---

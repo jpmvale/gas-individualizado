@@ -14,8 +14,8 @@ Fases 0 e 1 da especificação, sem a observabilidade e sem a Aépio real:
 - **Consumo:** resumo da unidade (mês, projeção em R$, hoje, comparação com a média do prédio),
   série por hora, dia ou mês, painel do admin, lista de unidades com situação e lista de moradores.
 - **Front:** login, consumo, histórico, admin (painel, unidades, moradores e convites).
-- **Infra:** Dockerfile do backend, compose de dev, overlay de produção com Caddy, CI com Postgres
-  18, deploy para a VPS desligado (ADR-G06).
+- **Infra:** Dockerfile do backend, compose de dev, overlay de produção para a VPS compartilhada,
+  CI com Postgres 18 e deploy por forced command (ADR-G06).
 
 ## Como verificar
 
@@ -30,6 +30,7 @@ consumo alto no 501 A, dois medidores mudos e um com bateria baixa.
 - **Fase 2:** tarifas editáveis pela tela, fechamento mensal, exportação CSV/PDF, alertas por e-mail.
 - **Recuperação de senha** (hoje só há o convite).
 - **Observabilidade:** OTel, Alloy e Sentry, como no coda.
-- **Deploy:** decidir o proxy na VPS (QA-09), criar os secrets e ligar `DEPLOY_ENABLED`.
-- As imagens Docker ainda não foram construídas (não havia Docker no ambiente da primeira sessão);
-  o primeiro deploy é quem as valida.
+- **Deploy:** o desenho está fechado (ADR-G06, [`deploy.md`](deploy.md)); faltam os passos na VPS,
+  no DNS e nos secrets do GitHub, e o primeiro deploy manual. As imagens Docker só são construídas
+  pela esteira (não havia Docker no ambiente das sessões), então o primeiro deploy é quem as valida.
+- **Backup e sonda** do app na VPS, quando houver dado real.

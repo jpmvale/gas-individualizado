@@ -1,8 +1,8 @@
 name: deploy
 
-# Mesmo desenho do coda: só em `main`, só depois do CI verde, imagens no GHCR e um forced
-# command SSH na VPS. Fica DESLIGADO até a VPS estar preparada: ligue com a variável de
-# repositório DEPLOY_ENABLED=true e os secrets GHCR_TOKEN, VPS_DEPLOY_KEY e VPS_HOST.
+# Mesmo desenho do coda e do property-scout: só em `main`, só depois do CI verde, imagens no
+# GHCR e o forced command `~/bin/deploy.sh` na VPS (repo vps-infra). Pré-requisitos e primeiro
+# deploy em docs-tec/deploy.md.
 on:
   workflow_run:
     workflows: ["CI"] # nome EXATO do ci.yml; o casamento é literal
@@ -16,10 +16,11 @@ concurrency:
 
 jobs:
   publicar:
+    # Automático só com DEPLOY_ENABLED=true; o disparo manual roda sempre (é como se faz o
+    # primeiro deploy, antes de ligar a variável).
     if: >-
-      vars.DEPLOY_ENABLED == 'true' && (
-        github.event_name == 'workflow_dispatch' ||
-        github.event.workflow_run.conclusion == 'success')
+      github.event_name == 'workflow_dispatch' ||
+      (vars.DEPLOY_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,7 +86,7 @@ jobs:
           # Só o que NÃO CHEGOU (255) é repetido; erro do script remoto sai na primeira.
           conectar() {
             rm -f ~/.ssh/known_hosts
-            ssh-keyscan -H "$MAQUINA" >> ~/.ssh/known_hosts 2>/dev/null || return 255
+            ssh-keyscan -H "$MAQUINA" >> ~/.ssh/known_hosts || return 255
             [ -s ~/.ssh/known_hosts ] || return 255
             set +e
             ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=15 \
