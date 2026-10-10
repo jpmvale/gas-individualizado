@@ -56,9 +56,11 @@ roteamento é um bloco no Caddyfile compartilhado.
    Não há `GHCR_TOKEN`: o repositório é público e o `GITHUB_TOKEN` do próprio Actions publica no
    GHCR. A VPS continua baixando as imagens com o login `read:packages` que já tem.
 
-   E em *Variables*: **`NEXT_PUBLIC_DEMO=true`** enquanto o app roda com a fonte simulada (mostra os
-   botões "entrar como" no login; é lido no build do front) e, depois do primeiro deploy manual dar
-   certo, **`DEPLOY_ENABLED=true`**, que liga o deploy automático a cada merge.
+   E em *Variables*: **`DEPLOY_ENABLED=true`**, que liga o deploy automático a cada merge (ligada
+   depois do primeiro deploy manual dar certo), e **`NEXT_PUBLIC_DEMO=false`**. A demo de produção
+   é **fechada** (decisão do João Pedro, 10/10/2026): sem os botões "entrar como", que enviam a senha
+   fixa `gas12345`. Para abrir a demo, trocar a variável para `true`, redefinir a senha das contas
+   demo para `gas12345` e publicar de novo (a variável é lida no build do front).
 
 ## O deploy
 
@@ -87,7 +89,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm \
   -e DEMO_SENHA='<senha das contas demo>' worker node apps/worker/dist/demo-seed.js
 ```
 
-O seed é idempotente (não recria o condomínio se ele existe). A partir daí o worker sincroniza de
+A senha usada está em `~/.config/gas-demo-senha` na VPS (modo 600), fora de qualquer repositório; vale
+para as três contas demo. O seed é idempotente (não recria o condomínio se ele existe). A partir daí o worker sincroniza de
 hora em hora e o histórico continua crescendo em tempo real.
 
 ## Operação
