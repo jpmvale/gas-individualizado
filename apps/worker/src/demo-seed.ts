@@ -63,7 +63,8 @@ async function main() {
   console.log("importando leituras da fonte simulada (a primeira vez leva alguns segundos)…");
   const r = await app.get(IngestaoService).sincronizarCondominio(cond.id);
   console.log(`pronto: ${r.medidores} medidores, ${r.leiturasNovas} leituras novas, ${r.falhas.length} falhas`);
-  console.log(`contas: ana@exemplo.com (moradora 302 A), sindico@exemplo.com (admin), operador@exemplo.com · senha ${SENHA}`);
+  // A senha não sai no log: em produção ela é gerada na VPS e a saída do seed fica no terminal de quem rodou.
+  console.log("contas: ana@exemplo.com (moradora 302 A), sindico@exemplo.com (admin), operador@exemplo.com · senha de DEMO_SENHA");
   await app.close();
   // O pool do postgres.js não fecha com o contexto do Nest; o script termina aqui.
   process.exit(0);
