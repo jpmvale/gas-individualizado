@@ -42,14 +42,19 @@ roteamento é um bloco no Caddyfile compartilhado.
 4. **vps-infra:** o ramo `gas-individualizado` no `bin/deploy.sh` e o bloco no `caddy/Caddyfile`,
    copiados para a VPS (`scp` + `caddy reload`). Sem o ramo, o deploy morre com "app não
    reconhecido", que é o comportamento correto do script.
-5. **Secrets do repositório** (Settings → Secrets and variables → Actions), os mesmos valores do
-   coda e do property-scout (secret de repositório não atravessa repositórios numa conta pessoal):
+5. **Secrets do repositório** (Settings → Secrets and variables → Actions):
 
    | Nome | O que é |
    |---|---|
-   | `VPS_HOST` | IP ou hostname da VPS |
-   | `VPS_DEPLOY_KEY` | chave privada sem passphrase do usuário `deploy` |
-   | `GHCR_TOKEN` | PAT com `write:packages` |
+   | `VPS_HOST` | IP da VPS |
+   | `VPS_DEPLOY_KEY` | a mesma chave dos outros apps: `~/.ssh/id_fdp_deploy` da máquina de desenvolvimento, cuja pública já está no `authorized_keys` da VPS presa ao `deploy.sh` |
+
+   ```bash
+   gh secret set VPS_DEPLOY_KEY -R jpmvale/gas-individualizado < ~/.ssh/id_fdp_deploy
+   ```
+
+   Não há `GHCR_TOKEN`: o repositório é público e o `GITHUB_TOKEN` do próprio Actions publica no
+   GHCR. A VPS continua baixando as imagens com o login `read:packages` que já tem.
 
    E em *Variables*: **`NEXT_PUBLIC_DEMO=true`** enquanto o app roda com a fonte simulada (mostra os
    botões "entrar como" no login; é lido no build do front) e, depois do primeiro deploy manual dar
