@@ -1,0 +1,16 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+allowBuilds:
+  "@scarf/scarf": false
+  "@node-rs/argon2": true
+  "@nestjs/core": false
+  esbuild: true
+  msgpackr-extract: false
+  sharp: true
+  unrs-resolver: true
+
+# Mesmo motivo do coda: duas versões de @types/pg criam duas instâncias do drizzle-orm
+# e os tipos do schema deixam de ser atribuíveis entre pacotes.
+overrides:
+  "@types/pg": "8.20.0"
