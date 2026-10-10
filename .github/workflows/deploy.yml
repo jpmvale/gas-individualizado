@@ -65,7 +65,7 @@ jobs:
           file: apps/front/Dockerfile
           push: true
           build-args: |
-            NEXT_PUBLIC_DEMO=${{ vars.NEXT_PUBLIC_DEMO || 'false' }}
+            NEXT_PUBLIC_DEMO=${{ vars.DEMO_ABERTA == 'true' }}
           tags: |
             ghcr.io/jpmvale/gas-individualizado-front:${{ steps.sha.outputs.tag }}
             ghcr.io/jpmvale/gas-individualizado-front:latest

@@ -57,10 +57,10 @@ roteamento é um bloco no Caddyfile compartilhado.
    GHCR. A VPS continua baixando as imagens com o login `read:packages` que já tem.
 
    E em *Variables*: **`DEPLOY_ENABLED=true`**, que liga o deploy automático a cada merge (ligada
-   depois do primeiro deploy manual dar certo), e **`NEXT_PUBLIC_DEMO=false`**. A demo de produção
-   é **fechada** (decisão do João Pedro, 10/10/2026): sem os botões "entrar como", que enviam a senha
-   fixa `gas12345`. Para abrir a demo, trocar a variável para `true`, redefinir a senha das contas
-   demo para `gas12345` e publicar de novo (a variável é lida no build do front).
+   depois do primeiro deploy manual dar certo), . A demo de produção é **fechada** (decisão do
+   João Pedro, 10/10/2026): sem os botões "entrar como", que enviam a senha fixa `gas12345`. Ela só
+   abre com a variável **`DEMO_ABERTA=true`** (vira o `NEXT_PUBLIC_DEMO` do build do front), mais a
+   senha das contas demo redefinida para `gas12345` e um deploy novo. Ausente, a demo fica fechada.
 
 ## O deploy
 
