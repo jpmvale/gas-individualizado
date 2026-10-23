@@ -2,6 +2,18 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+/**
+ * Renderização sob demanda em TODAS as rotas.
+ *
+ * Não é preferência de arquitetura: é o que faz a CSP com nonce funcionar. O nonce nasce na
+ * requisição, e página prerenderizada no build não tem requisição — o HTML sairia com script sem
+ * nonce e a política recusaria os próprios scripts do Next.
+ *
+ * O preço é pequeno aqui: fora `/login` e `/convite`, tudo exige sessão, e página de quem está
+ * logado não se prerenderiza de qualquer forma.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Gás Individualizado",
   description: "Consumo de gás GLP por unidade",
