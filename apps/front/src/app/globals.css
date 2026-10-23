@@ -8,9 +8,11 @@
   --flag: #D97706; --flag-soft: #FDF1DF;
   --good: #1E7F4A; --good-soft: #E3F3EA; --warn: #9A5800; --warn-soft: #FBEFD9; --crit: #B42318; --crit-soft: #FBE7E5;
   --ref: #6F7C90; --odo-bg: #0F1B2D; --odo-fg: #F3F5F8; --odo-red: #E5484D;
-  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --f-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
-  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* `--f-*-fonte` vem do `next/font/google` no layout: o nome da família que ele gera para os
+     arquivos servidos por nós. Os fallbacks seguem valendo enquanto a fonte não carrega. */
+  --f-display: var(--f-display-fonte), "Segoe UI", system-ui, sans-serif;
+  --f-body: var(--f-body-fonte), "Segoe UI", system-ui, sans-serif;
+  --f-mono: var(--f-mono-fonte), ui-monospace, "SFMono-Regular", Menlo, monospace;
   --r: 10px;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
