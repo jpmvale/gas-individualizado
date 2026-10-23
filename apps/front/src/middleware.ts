@@ -16,17 +16,18 @@ const PUBLICAS = ["/login", "/convite"];
  * `'strict-dynamic'` acompanha o nonce: o bootstrap do Next carrega os chunks dinamicamente, e sem
  * ele cada chunk precisaria do próprio nonce.
  *
- * Google Fonts liberado em `style-src` e `font-src` porque o layout busca a folha lá. Servir a
- * fonte da própria máquina seria melhor — um terceiro a menos vendo o IP de quem visita —, mas é
- * outra mudança.
+ * `style-src` e `font-src` em `'self'` puro desde 23/10/2026, quando as fontes passaram a ser
+ * servidas por nós (`next/font/google` no layout). Se alguém voltar a apontar para
+ * fonts.googleapis.com, a fonte não carrega e o texto cai no fallback do sistema — sem erro no
+ * servidor. O console do navegador é onde isso aparece.
  */
 function politicaCsp(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
-    "font-src 'self' data: https://fonts.gstatic.com",
+    "font-src 'self' data:",
     "connect-src 'self'",
     "base-uri 'none'",
     "form-action 'self'",
